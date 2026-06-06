@@ -7,8 +7,8 @@ Shared FRR/OSPF sidecar container template consumed by
   (`NET_ADMIN`, `NET_RAW`, `SYS_ADMIN`).
 - The FRR config renderer (`frr-sidecar.frrConf`).
 - The PBR/transit env contract (`PBR_TRANSIT_TAG="201"`,
-  `PBR_TRANSIT_INTERFACES`), mirroring `TRANSIT_TAG = 201` in
-  `roles/backbone_network/files/ospf_injector/frr_injector/config.py`.
+  `PBR_TRANSIT_INTERFACES`). This chart is the canonical SSOT for
+  `TRANSIT_TAG = 201` (the docker-era ospf_injector config.py is removed).
 
 ## Consumer integration
 
@@ -33,9 +33,3 @@ In `templates/deployment.yaml` (inside `spec.template.spec.containers:`):
 {{- end }}
 ```
 
-## Distribution
-
-The library is consumed as an **unpacked subchart**: each consumer
-ships a hardlink copy at `charts/frr-sidecar/` so Terraform
-`helm_release` works without a `helm dependency build` step. Restore
-the hardlinks after a hard `git checkout` with `cp -al`.

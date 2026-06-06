@@ -16,10 +16,10 @@ Required dict keys:
     ospf:    dict consumed by frr-sidecar.frrConf
     transit: dict with `interfaces: [string]` (optional)
 
-PBR_TRANSIT_TAG="201" mirrors
-  roles/backbone_network/files/ospf_injector/frr_injector/config.py:TRANSIT_TAG
-which is the OSPF External LSA tag the transit_watcher.py (in the
-sidecar image) keys off to install `ip rule iif <iface> lookup 201`.
+PBR_TRANSIT_TAG is sourced from the shared named template frr-sidecar.transitTag
+defined in _frrconf.tpl (single source of truth; the docker-era ospf_injector
+config.py is removed). The transit_watcher.py (modules/frr-sidecar/image/)
+keys off this tag to install `ip rule iif <iface> lookup 201`.
 
 Capability set NET_ADMIN/NET_RAW/SYS_ADMIN matches the historical
 ospf_injector consumer.py contract; without SYS_ADMIN the FRR daemons
@@ -27,7 +27,7 @@ fail `cap_set_proc` on startup.
 */}}
 {{- define "frr-sidecar.container" -}}
 {{- if and (and .ospf .ospf.transit_provider) (and .transit (gt (len (default (list) .transit.interfaces)) 0)) -}}
-{{- fail (printf "frr-sidecar: workload cannot be both transit provider (ospf.transit_provider=true) and transit consumer (transit.interfaces=%v) at the same time. See roles/backbone_network/files/ospf_injector/frr_injector/transit_config.py:34-36." .transit.interfaces) -}}
+{{- fail (printf "frr-sidecar: workload cannot be both transit provider (ospf.transit_provider=true) and transit consumer (transit.interfaces=%v) at the same time. See modules/frr-sidecar/charts/frr-sidecar/templates/_container.tpl." .transit.interfaces) -}}
 {{- end -}}
 {{- if .ospf -}}
 - name: frr-sidecar
@@ -37,7 +37,7 @@ fail `cap_set_proc` on startup.
   {{- if .interfaces }}
   env:
     - name: PBR_TRANSIT_TAG
-      value: "201"
+      value: {{ include "frr-sidecar.transitTag" . | quote }}
     - name: PBR_TRANSIT_INTERFACES
       value: {{ join "," .interfaces | quote }}
   {{- end }}
